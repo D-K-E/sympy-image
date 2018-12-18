@@ -6,10 +6,11 @@
 
 import numpy as np
 from sympy.geometry import point
+
 from utils import jit_points as jpoints
 
 
-class Point(point.Point):
+class PointND(point.Point):
     "N dimensional point object"
 
     def __init__(self, coords: ()):
@@ -32,29 +33,7 @@ class Point(point.Point):
     def _checkPointDirection(point1, point2):
         "Check whether two points are in same direction"
         assert point1.ndim == point2.ndim
-
-        ndimp = point1.ndim
-        p1coords = point1.coords
-        p2coords = point2.coords
-
-        checkval = False
-        divisions = []
-        divisionSum = 0
-
-        for i in range(ndimp):
-            division = p1coords[i] / p2coords[i]
-            divisionSum += division
-
-        #
-        divisionAverage = divisionSum / ndimp
-
-        #
-        divbools = [divisionAverage == div for div in divisions]
-        checkval = False
-        if all(divbools) and divisionAverage > 0:
-            checkval = True
-
-        return checkval
+        return point1.unit == point2.unit
 
     def checkPointDirection(self, point):
         "Wrapper for class instance"
@@ -64,7 +43,9 @@ class Point(point.Point):
 class Point2D(point.Point2D):
     "Regroups methods with respect to point in 2d"
 
-    def __init__(self, x=0, y=0, coordlist=None):
+    def __init__(self, x=0, y=0,
+                 coordlist=None,
+                 degree=0):
         if coordlist is not None:
             assert len(coordlist) == 2
             super().__init__(coords=coordlist)
@@ -73,7 +54,7 @@ class Point2D(point.Point2D):
         else:
             super().__init__(coords=(x, y))
         #
-        self.angle_degree = 0
+        self.angle_degree = degree
         self.radian = self.angle_degree * np.pi / 180
         self.old_x = 0
         self.old_y = 0
@@ -85,67 +66,6 @@ class Point2D(point.Point2D):
     def __call__(self):
         "Implements direct calls"
         return self.__str__()
-
-    def setXY(self, points: ()):
-        "Set x and y respectively to current instance"
-        self.x = points[0]
-        self.y = points[1]
-        #
-        return None
-
-    def get_new_xy(self):
-        "get new x and y values with old x and y values"
-        self.new_x, self.new_y = jpoints.get_new_xy(instance=self)
-        #
-        return (self.new_x, self.new_y)
-
-    def get_new_x(self):
-        "Get new x value based on the angle"
-        prod3 = self.old_y * np.sin(self.radian)
-        prod4 = self.old_x * np.cos(self.radian)
-        self.new_x = int(prod3 + prod4)
-        #
-        return self.new_x
-
-    def get_new_y(self):
-        "get new y value based on the angle"
-        prod1 = self.old_y * np.cos(self.radian)
-        prod2 = self.old_x * np.sin(self.radian)
-        self.new_y = int(prod1 - prod2)
-
-        return self.new_y
-
-    def get_old_x(self):
-        "Get old x value based on the angle"
-        prod1 = self.old_y * np.sin(self.radian)
-        diff = self.new_x - prod1
-        self.old_x = diff // np.cos(self.radian)
-
-        return self.old_x
-
-    def get_old_y(self):
-        "get old y value based on the angle"
-        prod = self.old_x * np.sin(self.radian)
-        summ = self.new_y + prod
-        self.old_y = summ // np.cos(self.radian)
-
-        return self.old_y
-
-    def get_old_x2(self):
-        "get old x value based on the angle and old and new y values"
-        prod = self.old_y * np.cos(self.radian)
-        diff = prod - self.new_y
-        self.old_x = diff // np.sin(self.radian)
-
-        return self.old_x
-
-    def get_old_y2(self):
-        "get old y value based on the angle and old and new x values"
-        prod = self.old_x * np.cos(self.radian)
-        diff = self.new_x - prod
-        self.old_y = diff // np.sin(self.radian)
-
-        return self.old_y
 
     def carte2polar(self):
         "Transform cartesian coordinates to polar coordinates"
@@ -163,9 +83,9 @@ class ImagePoint2D(Point2D):
 
     def __init__(self,
                  image: np.ndarray[[np.uint8]],
-                 x,y,
+                 x, y,
                  costfn=lambda x: x,
-                 energyfn=None,
+                 emap=None  #: np.ndarray[[np.uint8]],
                  spacePoint=None) -> None:
         self.x = x
         self.y = y
@@ -174,31 +94,13 @@ class ImagePoint2D(Point2D):
             self.y = spacePoint.y
         super().__init__(x=self.x, y=self.y)
         self.costfn = costfn
-        self.energyfn = energyfn
+        self.emap = emap
         self.image = image
         self.pixel_value = None
         self.pixel_energy = None
         # self.parent = ImagePoint2D()
         # self.child = ImagePoint2D()
         #
-
-    def __lt__(self, point):
-        "Implement < operator for instances"
-        return self.costfn(self) < self.costfn(point)
-
-    def __gt__(self, point):
-        "Implement > operator for instances"
-        return self.costfn(self) > self.costfn(point)
-
-    def __repr__(self):
-        "Implement a string representation of the object"
-        obj = """
-        Point in Euclidean Space at x: {0}, y: {1},
-        pixel energy: {2},
-        pixel value: {3}
-        """.format(self.x, self.y, str(self.pixel_energy),
-                   str(self.pixel_value))
-        return obj
 
     def copy(self):
         "Duplicate the current instance of the class"
@@ -236,10 +138,16 @@ class ImagePoint2D(Point2D):
         col = np.uint32(self.x)
         if self.image.ndim == 2:
             self.pixel_value = self.image[row, col]
-            self.pixel_energy = self.pixel_value
+            if self.emap is not None:
+                self.pixel_energy = self.emap[row, col]
+            else:
+                self.pixel_energy = self.pixel_value
         elif self.image.ndim == 3:
             self.pixel_value = self.image[row, col, :]
-            self.pixel_energy = self.image[row, col, :].sum()
+            if self.emap is not None:
+                self.pixel_energy = self.emap[row, col]
+            else:
+                self.pixel_energy = self.image[row, col, :].sum()
         #
         return self.pixel_value, self.pixel_energy
 
