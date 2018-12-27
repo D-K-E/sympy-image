@@ -7,8 +7,8 @@
 import numpy as np
 from sympy.geometry import polygon
 
-from vector import ImageLocatedVector2D, LocatedVector2D
 from point import ImagePoint2D, Point2D
+from vector import ImageLocatedVector2D, LocatedVector2D
 
 
 class Point2DBlock(polygon.Polygon):
@@ -60,7 +60,7 @@ class Point2DBlock(polygon.Polygon):
         self.blockpoints = self._getPointsInBlock(block=self)
 
     @staticmethod
-    def _getNearestPointInBlock(block, point: Point2D):
+    def _getNearestPointInBlock(block, point: Point2D) -> Point2D:
         "Get the point in block that is closest to given point "
         if point in block:
             return point
@@ -71,7 +71,7 @@ class Point2DBlock(polygon.Polygon):
             if dist == distance:
                 return p
 
-    def getNearestPointInBlock(self, point):
+    def getNearestPointInBlock(self, point) -> Point2D:
         "Wrapper method for class instance"
         return self._getNearestPointInBlock(block=self, point=point)
 
@@ -89,7 +89,7 @@ class Point2DBlock(polygon.Polygon):
         return dist, minpoint
 
     @classmethod
-    def _getFarthestDistanceInBlock2Point(cls, block, point: Point2D) -> int:
+    def _getFarthestDistanceInBlock2Point(cls, block, point: Point2D) -> float:
         "Get farthest distance from a point in block to the given point"
         return cls._getFarthestPointInBlockWithDist(block, point)[0]
 
@@ -492,12 +492,147 @@ class ImagePoint2DBlock(Point2DBlock):
         return None
 
     # Should override the instance methods of base class
+    @staticmethod
+    def _getDistanceChargeVariables(isMinDist, isMinCharge):
+        "Wrapper around image located vector for setting variables"
+        return ImageLocatedVector2D.getDistanceChargeVariables(
+            minDist=isMinDist,
+            minCharge=isMinCharge)
+
+    @staticmethod
+    def _getConditionDistanceCharge(isMinDist, isMinCharge,
+                                    distanceParentScope,
+                                    distanceLocalScope,
+                                    chargeParentScope,
+                                    chargeLocalScope):
+        "Wrapper around image located vector for setting condition"
+        return ImageLocatedVector2D.getConditionDistanceCharge(isMinDist,
+                                                               isMinCharge, distanceParentScope, distanceLocalScope,
+                                                               chargeParentScope, chargeLocalScope)
+
+    @staticmethod
+    def _getFarNearPointInBlockWithDistMinMaxCharge(block,
+                                                    point: ImagePoint2D,
+                                                    isMinCharge: bool,
+                                                    pointOrVec: bool,
+                                                    isMinDist: bool):
+        """
+        Given a point and a block give either farthest or nearest point
+        with maximum or minimum charge.
+
+        Note: For calculating charge we have two options, we can either look
+        for the charge of the block point, or charge of the vector that
+        reunites the block point to the given point
+        note: pointOrVec: True -> point, False -> vec
+
+        """
+        bpoint = None
+        bpvec = None
+
+        bpoints = block.blockpoints
+        dist, charge = block._getDistanceChargeVariables(
+            isMinCharge=isMinCharge,
+            isMinDist=isMinDist)
+        for bp in bpoints:
+            tempdist = bp.distance(point)
+            if pointOrVec is True:
+                tempcharge = bp.pixel_energy
+                vec = None
+            else:
+                vec = ImageLocatedVector2D(initial_point=bp,
+                                           image=block.image,
+                                           final_point=point)
+                vec.setVecProperties()
+                tempcharge = vec.charge
+            checkval = block._getConditionDistanceCharge(
+                isMinDist=isMinDist,
+                isMinCharge=isMinCharge,
+                distanceParentScope=dist,
+                distanceLocalScope=tempdist,
+                chargeParentScope=charge,
+                chargeLocalScope=tempcharge)
+            if checkval:
+                dist = tempdist
+                charge = tempcharge
+                bpoint = bp
+                bpvec = vec
+        return dist, charge, bpoint, bpvec
+
+    @classmethod
+    def _getNearestPointInBlock(cls, block, point) -> ImagePoint2D:
+        "Overrides the base class method"
+        dist, charge, point, vec = cls._getFarNearPointInBlockWithDistMinMaxCharge(
+            block=block,
+            point=point,
+            isMinCharge=None,
+            pointOrVec=True,
+            isMinDist=True)
+        point.setPointProperties()
+
+        return point
+
+    @classmethod
+    def _getFarthestPointInBlockWithDist(cls, block,
+                                         point: Point2D) -> ImagePoint2D:
+        "Overrides the base class method"
+        (dist, charge,
+         point, vec) = cls._getFarNearPointInBlockWithDistMinMaxCharge(
+            block=block,
+            point=point,
+            isMinCharge=None,
+            pointOrVec=True,
+            isMinDist=False)
+        point.setPointProperties()
+
+        return dist, point
+
+    @classmethod
+    def _getNearestPointVecInBlockWithDist(cls, block, point) -> ImagePoint2D:
+        "Overrides the base class method"
+        (dist, charge,
+         point, vec) = cls._getFarNearPointInBlockWithDistMinMaxCharge(
+            block=block,
+            point=point,
+            isMinCharge=None,
+            pointOrVec=False,
+            isMinDist=True)
+        vec.setVecProperties()
+
+        return dist, vec
+
+    @classmethod
+    def _getFarthestPointVecInBlockWithDist(cls, block,
+                                            point: Point2D) -> ImagePoint2D:
+        "Overrides the base class method"
+        dist, charge, point, vec = cls._getFarNearPointInBlockWithDistMinMaxCharge(
+            block=block,
+            point=point,
+            isMinCharge=None,
+            pointOrVec=False,
+            isMinDist=False)
+        vec.setVecProperties()
+
+        return dist, vec
+
+    @classmethod
+    def _getFarthestPointVecInBlock(cls,
+                                    block,
+                                    point: Point2D) -> ImageLocatedVector2D:
+        "Get the vector between farthest point in block and given point"
+        return cls._getFarthestPointVecInBlockWithDist(block, point)[1]
+
+    @classmethod
+    def _getNearestPointVecInBlock(cls,
+                                   block,
+                                   point: Point2D) -> ImageLocatedVector2D:
+        "Get the vector between farthest point in block and given point"
+        return cls._getNearestPointVecInBlockWithDist(block, point)[1]
 
     def setBlockpoints(self):
         "Overrides the base class method"
         blockpoints = self._getPointsInBlock(block=self)
         self.blockpoints = [
-            ImagePoint2D(spacePoint=p, image=self.image).setPixelValueEnergy()
+            ImagePoint2D(spacePoint=p, image=self.image).setPointProperties()
             for p in blockpoints
         ]
         return None
