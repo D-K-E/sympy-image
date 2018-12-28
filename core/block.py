@@ -10,6 +10,127 @@ from sympy.geometry import polygon
 from point import ImagePoint2D, Point2D
 from vector import ImageLocatedVector2D, LocatedVector2D
 
+# Point methods:
+#     Given: a point
+
+#     Operations:
+
+#     - find the farthest point in block with max charge given the point
+#     - find the farthest point in block with least vector charge given the point
+#     - find the farthest point in block with max vector charge given the point
+
+#     - find the nearest side in block to the given point using closest point
+#       on side.
+#     - find the nearest side in block to the given point using farthest point
+#       on side.
+#     - find the point in block with least charge given the point
+#     - find the nearest side in block with least charge given the point using
+#       closest point on side
+#     - find the nearest side in block with least charge given the point using
+#       farthest point on side
+#     - find the nearest side in block with least vector charge given the point
+#       using closest point on side
+#     - find the nearest side in block with least vector charge given the point
+#       using farthest point on side
+#     - find the farthest side in block with max charge given the point using
+#       closest point on side
+#     - find the farthest side in block with max charge given the point using
+#       nearest point on side
+#     - find the farthest side in block with least vector charge given the point
+#       using closest point on side
+#     - find the farthest side in block with least vector charge given the point
+#       using farthest point on side
+#     - find the farthest side in block with max vector charge given the point
+#       using closest point on side
+#     - find the farthest side in block with max vector charge given the point
+#       using farthest point on side
+
+#     Each of these operations can give distance, charge, vector, point, side as
+#     output
+
+#     Vector methods:
+
+#     Given: an image located vector2d
+
+#     Operations:
+
+# - find the nearest point in block to the given vector
+# - find the nearest point in block with least charge given the vector using
+#       nearest point on vector
+# - find the nearest point in block with least charge given the vector using
+#   farthest point on vector
+# - find the nearest point in block with least vector charge given the vector
+#       using nearest point on vector
+#     - find the nearest point in block with least vector charge given the vector
+#       using farthest point on vector
+#     - find the farthest point in block with max charge given the vector using
+#       nearest point on vector
+#     - find the farthest point in block with max charge given the vector using
+#       farthest point on vector
+#     - find the farthest point in block with least vector charge given the vector using
+#       nearest point on vector
+#     - find the farthest point in block with least vector charge given the vector using
+#       farthest point on vector
+#     - find the farthest point in block with max vector charge given the vector using
+#       nearest point on vector
+#     - find the farthest point in block with max vector charge given the vector using
+#       farthest point on vector
+
+#     - find the nearest side in block to the given vector
+#     - find the nearest side in block with least charge given the vector using
+#       nearest point on vector with nearest point in side
+#     - find the nearest side in block with least charge given the vector using
+#       nearest point on vector with farthest point in side
+#     - find the nearest side in block with least charge given the vector using
+#       farthest point on vector with nearest point in side
+#     - find the nearest side in block with least charge given the vector using
+#       farthest point on vector with farthest point in side
+#     - find the nearest side in block with least vector charge given the vector
+#       using nearest point on vector with nearest point in side
+#     - find the nearest side in block with least vector charge given the vector
+#       using nearest point on vector with farthest point in side
+#     - find the nearest side in block with least vector charge given the vector
+#       using farthest point on vector with nearest point in side
+#     - find the nearest side in block with least vector charge given the vector
+#       using farthest point on vector with farthest point in side
+
+#     - find the farthest side in block with max charge given the vector using
+#       nearest point on vector with nearest point in side
+#     - find the farthest side in block with max charge given the vector using
+#       nearest point on vector with farthest point in side
+#     - find the farthest side in block with max charge given the vector using
+#       farthest point on vector with nearest point in side
+#     - find the farthest side in block with least vector charge given the vector using
+#       nearest point on vector with nearest point in side
+#     - find the farthest side in block with least vector charge given the vector using
+#       farthest point on vector with nearest point in side
+#     - find the farthest side in block with max vector charge given the vector using
+#       nearest point on vector with nearest point in side
+#     - find the farthest side in block with max vector charge given the vector using
+#       farthest point on vector with nearest point in side
+#     - find the farthest side in block with max charge given the vector using
+#       farthest point on vector with farthest point in side
+#     - find the farthest side in block with least vector charge given the vector using
+# using
+#       farthest point on vector with nearest point in side
+#     - find the farthest side in block with max vector charge given the vector us
+# ing
+#       nearest point on vector with nearest point in side
+#     - find the farthest side in block with max vector charge given the vector us
+# ing
+#       farthest point on vector with nearest point in side
+#     - find the farthest side in block with max charge given the vector using
+#       farthest point on vector with farthest point in side
+#     - find the farthest side in block with least vector charge given the vector
+# using
+#       nearest point on vector with farthest point in side
+#     - find the farthest side in block with least vector charge given the vector using
+#       farthest point on vector with farthest point in side
+#     - find the farthest side in block with max vector charge given the vector using
+#       nearest point on vector with farthest point in side
+#     - find the farthest side in block with max vector charge given the vector using
+#       farthest point on vector with farthest point in side
+
 
 class Point2DBlock(polygon.Polygon):
     """
@@ -506,24 +627,28 @@ class ImagePoint2DBlock(Point2DBlock):
                                     chargeParentScope,
                                     chargeLocalScope):
         "Wrapper around image located vector for setting condition"
-        return ImageLocatedVector2D.getConditionDistanceCharge(isMinDist,
-                                                               isMinCharge, distanceParentScope, distanceLocalScope,
-                                                               chargeParentScope, chargeLocalScope)
+        return ImageLocatedVector2D.getConditionDistanceCharge(
+            isMinDist,
+            isMinCharge,
+            distanceParentScope,
+            distanceLocalScope,
+            chargeParentScope,
+            chargeLocalScope)
 
     @staticmethod
     def _getFarNearPointInBlockWithDistMinMaxCharge(block,
                                                     point: ImagePoint2D,
                                                     isMinCharge: bool,
-                                                    pointOrVec: bool,
+                                                    isPoint: bool,
                                                     isMinDist: bool):
         """
         Given a point and a block give either farthest or nearest point
-        with maximum or minimum charge.
+        with maximum or minimum charge in block
 
         Note: For calculating charge we have two options, we can either look
         for the charge of the block point, or charge of the vector that
         reunites the block point to the given point
-        note: pointOrVec: True -> point, False -> vec
+        note: isPoint: True -> point, False -> vec
 
         """
         bpoint = None
@@ -535,7 +660,7 @@ class ImagePoint2DBlock(Point2DBlock):
             isMinDist=isMinDist)
         for bp in bpoints:
             tempdist = bp.distance(point)
-            if pointOrVec is True:
+            if isPoint is True:
                 tempcharge = bp.pixel_energy
                 vec = None
             else:
@@ -544,6 +669,7 @@ class ImagePoint2DBlock(Point2DBlock):
                                            final_point=point)
                 vec.setVecProperties()
                 tempcharge = vec.charge
+
             checkval = block._getConditionDistanceCharge(
                 isMinDist=isMinDist,
                 isMinCharge=isMinCharge,
@@ -561,11 +687,12 @@ class ImagePoint2DBlock(Point2DBlock):
     @classmethod
     def _getNearestPointInBlock(cls, block, point) -> ImagePoint2D:
         "Overrides the base class method"
-        dist, charge, point, vec = cls._getFarNearPointInBlockWithDistMinMaxCharge(
+        (dist, charge,
+         point, vec) = cls._getFarNearPointInBlockWithDistMinMaxCharge(
             block=block,
             point=point,
             isMinCharge=None,
-            pointOrVec=True,
+            isPoint=True,
             isMinDist=True)
         point.setPointProperties()
 
@@ -580,7 +707,7 @@ class ImagePoint2DBlock(Point2DBlock):
             block=block,
             point=point,
             isMinCharge=None,
-            pointOrVec=True,
+            isPoint=True,
             isMinDist=False)
         point.setPointProperties()
 
@@ -594,7 +721,7 @@ class ImagePoint2DBlock(Point2DBlock):
             block=block,
             point=point,
             isMinCharge=None,
-            pointOrVec=False,
+            isPoint=False,
             isMinDist=True)
         vec.setVecProperties()
 
@@ -604,11 +731,12 @@ class ImagePoint2DBlock(Point2DBlock):
     def _getFarthestPointVecInBlockWithDist(cls, block,
                                             point: Point2D) -> ImagePoint2D:
         "Overrides the base class method"
-        dist, charge, point, vec = cls._getFarNearPointInBlockWithDistMinMaxCharge(
+        (dist, charge,
+         point, vec) = cls._getFarNearPointInBlockWithDistMinMaxCharge(
             block=block,
             point=point,
             isMinCharge=None,
-            pointOrVec=False,
+            isPoint=False,
             isMinDist=False)
         vec.setVecProperties()
 
@@ -627,6 +755,176 @@ class ImagePoint2DBlock(Point2DBlock):
                                    point: Point2D) -> ImageLocatedVector2D:
         "Get the vector between farthest point in block and given point"
         return cls._getNearestPointVecInBlockWithDist(block, point)[1]
+
+    @classmethod
+    def _getMinChargePointChargeInBlock(cls, block) -> list:
+        "Get minimum charged point in block"
+        p = Point2D(x=0, y=0)
+        (dist, charge,
+         point, vec) = cls._getFarNearPointInBlockWithDistMinMaxCharge(
+            block=block,
+            point=p,
+            isMinCharge=True,
+            isPoint=True,
+            isMinDist=None)
+        return point, charge
+
+    @classmethod
+    def _getMinimumPointChargeInBlock(cls, block) -> float:
+        "Get minimum point charge in block"
+        return cls._getMinChargePointChargeInBlock(block)[1]
+
+    @classmethod
+    def _getMinChargePointInBlock(cls, block) -> float:
+            "Get minimum point charge in block"
+            return cls._getMinChargePointChargeInBlock(block)[0]
+
+    @classmethod
+    def _getMaxChargePointChargeInBlock(cls, block) -> list:
+        "Get point with maximum charge in block and its charge"
+        p = Point2D(x=0, y=0)
+        (dist, charge,
+         point, vec) = cls._getFarNearPointInBlockWithDistMinMaxCharge(
+            block=block,
+            point=p,
+            isMinCharge=False,
+            isPoint=True,
+            isMinDist=None)
+        return point, charge
+
+    @classmethod
+    def _getMaximumPointChargeInBlock(cls, block) -> float:
+        "Get minimum point charge in block"
+        return cls._getMaxChargePointChargeInBlock(block)[1]
+
+    @classmethod
+    def _getMaxChargePointInBlock(cls, block) -> float:
+        "Get minimum point charge in block"
+        return cls._getMaxChargePointChargeInBlock(block)[0]
+
+    @classmethod
+    def _getNearestMinChargePointChargeDistInBlock(cls,
+                                                   block,
+                                                   point) -> list:
+        """
+        Get nearest point with minimum charge
+        outputs charge, distance, and point
+        """
+        (dist, charge,
+         point, vec) = cls._getFarNearPointInBlockWithDistMinMaxCharge(
+            block=block,
+            point=point,
+            isMinCharge=True,
+            isPoint=True,
+            isMinDist=True)
+        return point, charge, dist
+
+    @classmethod
+    def _getNearestMinChargePointDistInBlock(cls, block, point) -> float:
+        "Get distance of the point with minimum charge and minimum distance"
+        return cls._getNearestMinChargePointChargeDistInBlock(block, point)[2]
+
+    @classmethod
+    def _getNearestMinChargePointChargeInBlock(cls, block, point) -> float:
+        "Get distance of the point with minimum charge and minimum distance"
+        return cls._getNearestMinChargePointChargeDistInBlock(block, point)[1]
+
+    @classmethod
+    def _getNearestMinChargePointInBlock(cls, block, point) -> float:
+        "Get distance of the point with minimum charge and minimum distance"
+        return cls._getNearestMinChargePointChargeDistInBlock(block, point)[0]
+
+    @classmethod
+    def _getNearestMinChargePointVecChargeDistInBlock(cls,
+                                                      block,
+                                                      point) -> list:
+        """
+        Get nearest point with minimum charge
+        outputs charge, distance, and point
+        """
+        (dist, charge,
+         point, vec) = cls._getFarNearPointInBlockWithDistMinMaxCharge(
+            block=block,
+            point=point,
+            isMinCharge=True,
+            isPoint=False,
+            isMinDist=True)
+        return vec, charge, dist
+
+    @classmethod
+    def _getNearestMinChargePointVecChargeInBlock(cls, block, point) -> float:
+        "Get the charge of the vector between nearest point in block and " \
+            "given point"
+        return cls._getNearestMinChargePointVecChargeDistInBlock(block,
+                                                                 point)[1]
+
+    @classmethod
+    def _getNearestMinChargePointVecInBlock(cls,
+                                            block,
+                                            point) -> ImageLocatedVector2D:
+        "Get the charge of the vector between nearest point in block and " \
+            "given point"
+        return cls._getNearestMinChargePointVecChargeDistInBlock(block,
+                                                                 point)[0]
+
+    @classmethod
+    def _getNearestMaxChargePointChargeDistInBlock(cls,
+                                                   block,
+                                                   point) -> list:
+        """
+        Get nearest point with minimum charge
+        outputs charge, distance, and point
+        """
+        (dist, charge,
+         point, vec) = cls._getFarNearPointInBlockWithDistMinMaxCharge(
+            block=block,
+            point=point,
+            isMinCharge=False,
+            isPoint=True,
+            isMinDist=True)
+        return point, charge, dist
+
+    @classmethod
+    def _getNearestMaxChargePointDistInBlock(cls, block, point):
+        "Get distance of nearest point with maximum charge in block to point"
+        return cls._getNearestMaxChargePointDistInBlock(block, point)[2]
+
+    @classmethod
+    def _getNearestMaxChargePointChargeInBlock(cls, block, point):
+        "Get distance of nearest point with maximum charge in block to point"
+        return cls._getNearestMaxChargePointDistInBlock(block, point)[1]
+
+    @classmethod
+    def _getNearestMaxChargePointInBlock(cls, block, point):
+        "Get distance of nearest point with maximum charge in block to point"
+        return cls._getNearestMaxChargePointDistInBlock(block, point)[0]
+
+    @classmethod
+    def _getNearestMaxChargePointVecChargeDistInBlock(cls,
+                                                      block,
+                                                      point) -> list:
+        """
+        Get nearest point with minimum charge
+        outputs charge, distance, and point
+        """
+        (dist, charge,
+         point, vec) = cls._getFarNearPointInBlockWithDistMinMaxCharge(
+            block=block,
+            point=point,
+            isMinCharge=False,
+            isPoint=False,
+            isMinDist=True)
+        return vec, charge, dist
+
+    @classmethod
+    def _getNearestMaxChargePointVecChargeInBlock(cls, block, point):
+        "Get charge of vec nearest point with maximum charge in block to point"
+        return cls._getNearestMaxChargePointVecDistInBlock(block, point)[1]
+
+    @classmethod
+    def _getNearestMaxChargePointVecInBlock(cls, block, point):
+        "Get distance of nearest point with maximum charge in block to point"
+        return cls._getNearestMaxChargePointVecDistInBlock(block, point)[0]
 
     def setBlockpoints(self):
         "Overrides the base class method"
