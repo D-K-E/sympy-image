@@ -15,10 +15,6 @@ from vector import ImageLocatedVector2D, LocatedVector2D
 
 #     Operations:
 
-#     - find the farthest point in block with max charge given the point
-#     - find the farthest point in block with least vector charge given the point
-#     - find the farthest point in block with max vector charge given the point
-
 #     - find the nearest side in block to the given point using closest point
 #       on side.
 #     - find the nearest side in block to the given point using farthest point
@@ -181,34 +177,46 @@ class Point2DBlock(polygon.Polygon):
         self.blockpoints = self._getPointsInBlock(block=self)
 
     @staticmethod
-    def _getNearestPointInBlock(block, point: Point2D) -> Point2D:
-        "Get the point in block that is closest to given point "
+    def _getPointInBlockByDistance(block,
+                                   point: Point2D,
+                                   minDist: bool):
+        "Get min/max distance block point to given point"
         if point in block:
-            return point
-        distance = block.distance(point)
+            return point, 0
+        if minDist is True:
+            dist = float('inf')
+        else:
+            dist = float('-inf')
         points = block.vertices
+        result = None
         for p in points:
-            dist = p.distance(point)
-            if dist == distance:
-                return p
+            distance = p.distance(point)
+            if minDist is True:
+                condition = distance <= dist
+            else:
+                condition = distance > dist
+            if condition:
+                dist = distance
+                result = p
+        return result, dist
 
+    @classmethod
+    def _getNearestPointInBlock(cls, block, 
+                                point: Point2D) -> Point2D:
+        "Get the point in block that is closest to given point "
+        return cls._getPointInBlockByDistance(block,
+                                              point, minDist=True)[0]
+        
     def getNearestPointInBlock(self, point) -> Point2D:
         "Wrapper method for class instance"
-        return self._getNearestPointInBlock(block=self, point=point)
+        return self._getNearestPointInBlock(block=self,
+                                            point=point)
 
-    @staticmethod
-    def _getFarthestPointInBlockWithDist(block, point: Point2D):
+    @classmethod
+    def _getFarthestPointInBlockWithDist(cls, block, point: Point2D):
         "Get farthest point in block to the given point"
-        dist = float('-inf')
-        minpoint = None
-        for p in block.vertices:
-            distance = p.distance(point)
-            if distance > dist:
-                dist = distance
-                minpoint = p
-
-        return dist, minpoint
-
+        return cls._getPointInBlockByDistance(block, point, minDist=False)
+        
     @classmethod
     def _getFarthestDistanceInBlock2Point(cls, block, point: Point2D) -> float:
         "Get farthest distance from a point in block to the given point"
@@ -219,16 +227,63 @@ class Point2DBlock(polygon.Polygon):
         "Get farthest distance from a point in block to the given point"
         return cls._getFarthestPointInBlockWithDist(block, point)[1]
 
-    def getFarthestDistanceFromBlock2Point(self, point: Point2D) -> float:
+    def getFarthestDistanceInBlock2Point(self, point: Point2D) -> float:
         "Get farthest distance from block to the given point"
         return self._getFarthestDistanceInBlock2Point(block=self, point=point)
 
-    def getFarthestPointFromBlock2Point(self, point: Point2D) -> Point2D:
+    def getFarthestPointInBlock2Point(self, point: Point2D) -> Point2D:
         "Get farthest distance from block to the given point"
         return self._getFarthestPointInBlock2Point(block=self, point=point)
 
     @staticmethod
-    def _getCloseOrFarSideAndDistanceInBlock2Point(block, point: Point2D,
+    def _getBlockSideByDistance(block,
+                                point: Point2D,
+                                isMaxFuncs: bool,
+                                isNear: bool):
+        """
+        Give the block side corresponding to distance based criteria
+
+        Possible output options are following:
+        Block side with shortest distance to given point where
+        the distance is calculated from the closest point on side
+
+        Block side with shortest distance to given point where
+        the distance is calculated from the farthest point on side
+
+        Block side with farthest distance to given point where
+        the distance is calculated from the closest point on side
+
+        Block side with farthest distance to given point where
+        the distance is calculated from the farthest point on side
+        """
+        sides = block.sides
+        if isNear is True:
+            dist = float('inf')
+        else:
+            dist = float('-inf')
+        sideInBlock = None
+        for side in sides:
+            # side is a Segment
+            vec = LocatedVector2D(segment=side)
+            vec.setVecProperties()
+            p, distance = vec._getPoint2VecDistancePoint(aVec=vec, 
+                                                         point=point,
+                                                         isMin=isMaxFuncs)
+            if isNear is True:
+                condition = distance <= dist
+            else:
+                condition = distance > dist
+            if condition:
+                dist = distance
+                sideInBlock = side
+
+        sideInBlock = LocatedVector2D(segment=sideInBlock)
+        sideInBlock.setVecProperties()
+        return dist, sideInBlock
+
+    @classmethod
+    def _getCloseOrFarSideAndDistanceInBlock2Point(block,
+                                                   point: Point2D,
                                                    isNear: bool):
         "Get nearest side in block to the given point"
         sides = block.sides
@@ -240,7 +295,6 @@ class Point2DBlock(polygon.Polygon):
         for side in sides:
             # side is a Segment
             distance = side.distance(point)
-            condition = None
             if isNear is True:
                 condition = distance <= dist
             else:
@@ -285,7 +339,7 @@ class Point2DBlock(polygon.Polygon):
         return cls._getFarSideAndDistanceInBlock2Point(block, point)[0]
 
     @classmethod
-    def _getCloseOrFarSideAndDistanceInBlock2Vec(
+    def _getSideInBlock2VecByDistance(
             cls,
             block,
             vec: LocatedVector2D,
@@ -324,7 +378,7 @@ class Point2DBlock(polygon.Polygon):
     def _getClosestSideAndDistanceInBlock2VecWithMaxDist(cls, block, vec):
         "Get nearest side and distance in block to given vec"\
             " using maximum distance function"
-        return cls._getCloseOrFarSideAndDistanceInBlock2Vec(
+        return cls._getSideInBlock2VecByDistance(
             block=block, vec=vec, isMin=True, isMaxFuncs=True)
 
     @classmethod
@@ -344,7 +398,7 @@ class Point2DBlock(polygon.Polygon):
     def _getFarSideAndDistanceInBlock2VecWithMaxDist(cls, block, vec):
         "Get farthest side and distance in block to given vec"\
             " using maximum distance function"
-        return cls._getCloseOrFarSideAndDistanceInBlock2Vec(
+        return cls._getSideInBlock2VecByDistance(
             block=block, vec=vec, isMin=False, isMaxFuncs=True)
 
     @classmethod
@@ -363,7 +417,7 @@ class Point2DBlock(polygon.Polygon):
     def _getClosestSideAndDistanceInBlock2VecWithMinDist(cls, block, vec):
         "Get nearest side and distance in block to given vec"\
             " using minimum distance function"
-        return cls._getCloseOrFarSideAndDistanceInBlock2Vec(
+        return cls._getSideInBlock2VecByDistance(
             block=block, vec=vec, isMin=True, isMaxFuncs=False)
 
     @classmethod
@@ -383,7 +437,7 @@ class Point2DBlock(polygon.Polygon):
     def _getFarSideAndDistanceInBlock2VecWithMinDist(cls, block, vec):
         "Get farthest side and distance in block to given vec"\
             " using maximum distance function"
-        return cls._getCloseOrFarSideAndDistanceInBlock2Vec(
+        return cls._getSideInBlock2VecByDistance(
             block=block, vec=vec, isMin=False, isMaxFuncs=False)
 
     @classmethod
@@ -776,8 +830,8 @@ class ImagePoint2DBlock(Point2DBlock):
 
     @classmethod
     def _getMinChargePointInBlock(cls, block) -> float:
-            "Get minimum point charge in block"
-            return cls._getMinChargePointChargeInBlock(block)[0]
+        "Get minimum point charge in block"
+        return cls._getMinChargePointChargeInBlock(block)[0]
 
     @classmethod
     def _getMaxChargePointChargeInBlock(cls, block) -> list:
@@ -925,6 +979,130 @@ class ImagePoint2DBlock(Point2DBlock):
     def _getNearestMaxChargePointVecInBlock(cls, block, point):
         "Get distance of nearest point with maximum charge in block to point"
         return cls._getNearestMaxChargePointVecDistInBlock(block, point)[0]
+
+    @classmethod
+    def _getFarthestMinChargePointChargeDistInBlock(cls,
+                                                    block,
+                                                    point) -> list:
+        """
+        Get nearest point with minimum charge
+        outputs charge, distance, and point
+        """
+        (dist, charge,
+         point, vec) = cls._getFarNearPointInBlockWithDistMinMaxCharge(
+            block=block,
+            point=point,
+            isMinCharge=True,
+            isPoint=True,
+            isMinDist=False)
+        return point, charge, dist
+
+    @classmethod
+    def _getFarthestMinChargePointDistInBlock(cls, block, point) -> float:
+        "Get distance of the point with minimum charge and minimum distance"
+        return cls._getFarthestMinChargePointChargeDistInBlock(block, point)[2]
+
+    @classmethod
+    def _getFarthestMinChargePointChargeInBlock(cls, block, point) -> float:
+        "Get distance of the point with minimum charge and minimum distance"
+        return cls._getFarthestMinChargePointChargeDistInBlock(block, point)[1]
+
+    @classmethod
+    def _getFarthestMinChargePointInBlock(cls, block, point) -> float:
+        "Get distance of the point with minimum charge and minimum distance"
+        return cls._getFarthestMinChargePointChargeDistInBlock(block, point)[0]
+
+    @classmethod
+    def _getFarthestMinChargePointVecChargeDistInBlock(cls,
+                                                       block,
+                                                       point) -> list:
+        """
+        Get nearest point with minimum charge
+        outputs charge, distance, and point
+        """
+        (dist, charge,
+         point, vec) = cls._getFarNearPointInBlockWithDistMinMaxCharge(
+            block=block,
+            point=point,
+            isMinCharge=True,
+            isPoint=False,
+            isMinDist=False)
+        return vec, charge, dist
+
+    @classmethod
+    def _getFarthestMinChargePointVecChargeInBlock(cls, block, point) -> float:
+        "Get the charge of the vector between nearest point in block and " \
+            "given point"
+        return cls._getFarthestMinChargePointVecChargeDistInBlock(block,
+                                                                  point)[1]
+
+    @classmethod
+    def _getFarthestMinChargePointVecInBlock(cls,
+                                             block,
+                                             point) -> ImageLocatedVector2D:
+        "Get the charge of the vector between nearest point in block and " \
+            "given point"
+        return cls._getFarthestMinChargePointVecChargeDistInBlock(block,
+                                                                  point)[0]
+
+    @classmethod
+    def _getFarthestMaxChargePointChargeDistInBlock(cls,
+                                                    block,
+                                                    point) -> list:
+        """
+        Get nearest point with minimum charge
+        outputs charge, distance, and point
+        """
+        (dist, charge,
+         point, vec) = cls._getFarNearPointInBlockWithDistMinMaxCharge(
+            block=block,
+            point=point,
+            isMinCharge=False,
+            isPoint=True,
+            isMinDist=False)
+        return point, charge, dist
+
+    @classmethod
+    def _getFarthestMaxChargePointDistInBlock(cls, block, point):
+        "Get distance of nearest point with maximum charge in block to point"
+        return cls._getFarthestMaxChargePointDistInBlock(block, point)[2]
+
+    @classmethod
+    def _getFarthestMaxChargePointChargeInBlock(cls, block, point):
+        "Get distance of nearest point with maximum charge in block to point"
+        return cls._getFarthestMaxChargePointDistInBlock(block, point)[1]
+
+    @classmethod
+    def _getFarthestMaxChargePointInBlock(cls, block, point):
+        "Get distance of nearest point with maximum charge in block to point"
+        return cls._getFarthestMaxChargePointDistInBlock(block, point)[0]
+
+    @classmethod
+    def _getFarthestMaxChargePointVecChargeDistInBlock(cls,
+                                                       block,
+                                                       point) -> list:
+        """
+        Get nearest point with minimum charge
+        outputs charge, distance, and point
+        """
+        (dist, charge,
+         point, vec) = cls._getFarNearPointInBlockWithDistMinMaxCharge(
+            block=block,
+            point=point,
+            isMinCharge=False,
+            isPoint=False,
+            isMinDist=False)
+        return vec, charge, dist
+
+    @classmethod
+    def _getFarthestMaxChargePointVecChargeInBlock(cls, block, point):
+        "Get charge of vec nearest point with maximum charge in block to point"
+        return cls._getFarthestMaxChargePointVecDistInBlock(block, point)[1]
+
+    @classmethod
+    def _getFarthestMaxChargePointVecInBlock(cls, block, point):
+        "Get distance of nearest point with maximum charge in block to point"
+        return cls._getFarthestMaxChargePointVecDistInBlock(block, point)[0]
 
     def setBlockpoints(self):
         "Overrides the base class method"

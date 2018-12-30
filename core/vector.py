@@ -9,6 +9,7 @@ from sympy.geometry import line
 
 from point import ImagePoint2D, Point, Point2D
 
+
 class LocatedVector(line.Segment):
     "Located vector n dimensional"
 
