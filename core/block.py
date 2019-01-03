@@ -236,10 +236,8 @@ class Point2DBlock(polygon.Polygon):
         return self._getFarthestPointInBlock2Point(block=self, point=point)
 
     @staticmethod
-    def _getBlockSideByDistance(block,
-                                point: Point2D,
-                                isMaxFuncs: bool,
-                                isNear: bool):
+    def _getBlockSideByDistance(block, point: Point2D, isMinFuncs: bool,
+                                isNear: bool) -> [float, LocatedVector2D]:
         """
         Give the block side corresponding to distance based criteria
 
@@ -282,61 +280,97 @@ class Point2DBlock(polygon.Polygon):
         return dist, sideInBlock
 
     @classmethod
-    def _getCloseOrFarSideAndDistanceInBlock2Point(block,
-                                                   point: Point2D,
-                                                   isNear: bool):
-        "Get nearest side in block to the given point"
-        sides = block.sides
-        if isNear is True:
-            dist = float('inf')
-        else:
-            dist = float('-inf')
-        sideInBlock = None
-        for side in sides:
-            # side is a Segment
-            distance = side.distance(point)
-            if isNear is True:
-                condition = distance <= dist
-            else:
-                condition = distance > dist
-            if condition:
-                dist = distance
-                sideInBlock = side
-
-        sideInBlock = LocatedVector2D(segment=sideInBlock)
-        return dist, sideInBlock
+    def _getSideDistanceInBlock2Point(cls, block, point: Point2D,
+                                      isNear: bool):
+        """
+        Get nearest side in block to the given point
+        the distance is calculated from the nearest point on side
+        """
+        return cls._getBlockSideByDistance(block, point, 
+                                           isNear=isNear, isMinFuncs=True)
 
     @classmethod
-    def _getClosestSideAndDistanceInBlock2Point(cls, block, point):
+    def _getSideWithMaxDistanceInBlock2Point(cls, block, point: Point2D,
+                                             isNear:bool):
+        """
+        Get nearest or farthest side in block to the given point.
+
+        The distance is calculated from farthest point on the side
+        """
+        return cls._getBlockSideByDistance(block, point, isNear=isNear,
+                                           isMinFuncs=False)
+        
+    @classmethod
+    def _getCSideDistanceInBlock2Point(cls, block, point):
         "Get nearest side and distance in block to given point"
-        return cls._getCloseOrFarSideAndDistanceInBlock2Point(
+        return cls._getSideDistanceInBlock2Point(
             block, point, isNear=True)
 
     @classmethod
-    def _getClosestSideInBlock2Point(cls, block, point) -> LocatedVector2D:
+    def _getCSideInBlock2Point(cls, block, point) -> LocatedVector2D:
         "get nearest side in block to given point"
-        return cls._getClosestSideAndDistanceInBlock2Point(block, point)[1]
+        return cls._getCSideDistanceInBlock2Point(block, point)[1]
 
     @classmethod
-    def _getNearestDist2SideInBlock2Point(cls, block, point) -> float:
+    def _getCDist2SideInBlock2Point(cls, block, point) -> float:
         "get nearest side in block to given point"
-        return cls._getClosestSideAndDistanceInBlock2Point(block, point)[0]
+        return cls._getCSideDistanceInBlock2Point(block, point)[0]
 
     @classmethod
-    def _getFarSideAndDistanceInBlock2Point(cls, block, point):
+    def _getFSideDistanceInBlock2Point(cls, block, point):
         "Get nearest side and distance in block to given point"
-        return cls._getCloseOrFarSideAndDistanceInBlock2Point(
+        return cls._getSideDistanceInBlock2Point(
             block, point, isNear=False)
 
     @classmethod
-    def _getFarSideInBlock2Point(cls, block, point) -> LocatedVector2D:
+    def _getFSideInBlock2Point(cls, block, point) -> LocatedVector2D:
         "get nearest side in block to given point"
-        return cls._getFarSideAndDistanceInBlock2Point(block, point)[1]
+        return cls._getFSideDistanceInBlock2Point(block, point)[1]
 
     @classmethod
-    def _getFarthestDist2SideInBlock2Point(cls, block, point):
+    def _getFDist2SideInBlock2Point(cls, block, point):
         "get nearest side in block to given point"
-        return cls._getFarSideAndDistanceInBlock2Point(block, point)[0]
+        return cls._getFSideDistanceInBlock2Point(block, point)[0]
+
+    @classmethod
+    def _getCSideMaxDistanceInBlock2Point(cls, block, point):
+        """
+        Get closest side and distance in block to given point
+        
+        The distance is calculated from farthest point on the side
+        """
+        return cls._getSideWithMaxDistanceInBlock2Point(block, point,
+                                                        isNear=True)
+
+    @classmethod
+    def _getCSideMDInBlock2Point(cls, block, point) -> LocatedVector2D:
+        """
+        get nearest side in block to given point
+        
+        distance computed from farthest point on side
+        """
+        return cls._getCSideMaxDistanceInBlock2Point(block, point)[1]
+
+    @classmethod
+    def _getCDistMD2SideInBlock2Point(cls, block, point) -> float:
+        "get nearest side in block to given point"
+        return cls._getCSideMaxDistanceInBlock2Point(block, point)[0]
+
+    @classmethod
+    def _getFSideDistanceMDInBlock2Point(cls, block, point):
+        "Get nearest side and distance in block to given point"
+        return cls._getSideWithMaxDistanceInBlock2Point(
+            block, point, isNear=False)
+
+    @classmethod
+    def _getFSideInBlock2Point(cls, block, point) -> LocatedVector2D:
+        "get farthest side in block to given point"
+        return cls._getFSideDistanceMDInBlock2Point(block, point)[1]
+
+    @classmethod
+    def _getFDist2SideInBlock2Point(cls, block, point):
+        "get nearest side in block to given point"
+        return cls._getFSideDistanceMDInBlock2Point(block, point)[0]
 
     @classmethod
     def _getSideInBlock2VecByDistance(
@@ -344,7 +378,7 @@ class Point2DBlock(polygon.Polygon):
             block,
             vec: LocatedVector2D,
             isMin: bool,  # get minimum side or distance overall
-            isMaxFuncs: bool  # use maximum or minimum distance function
+            isMinFuncs: bool  # use maximum or minimum distance function
     ):
         "Get nearest side in block to the given vec"
         sides = block.sides
@@ -377,9 +411,9 @@ class Point2DBlock(polygon.Polygon):
     @classmethod
     def _getClosestSideAndDistanceInBlock2VecWithMaxDist(cls, block, vec):
         "Get nearest side and distance in block to given vec"\
-            " using maximum distance function"
+            " using minimum distance function"
         return cls._getSideInBlock2VecByDistance(
-            block=block, vec=vec, isMin=True, isMaxFuncs=True)
+            block=block, vec=vec, isMin=True, isMinFuncs=True)
 
     @classmethod
     def _getClosestSideInBlock2VecWithMaxDist(cls, block,
@@ -506,17 +540,17 @@ class Point2DBlock(polygon.Polygon):
         if isNearest is True:
             if isinstance(other, Point2D):
                 if justDistance is False:
-                    return self._getClosestSideInBlock2Point(
+                    return self._getCSideInBlock2Point(
                         block=self, point=other)
                 else:
-                    return self._getNearestDist2SideInBlock2Point(
+                    return self._getCDist2SideInBlock2Point(
                         block=self, point=other)
             else:
                 return self.getClosestSideOrDistanceWithDistFunc(
                     other, useMaxDistance, justDistance)
         else:
             if isinstance(other, Point2D):
-                return self._getFarSideInBlock2Point(block=self, point=other)
+                return self._getFSideInBlock2Point(block=self, point=other)
             else:
                 return self.getFarSideOrDistanceWithDistFunc(
                     other, useMaxDistance, justDistance)

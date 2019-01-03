@@ -102,9 +102,9 @@ class LocatedVector2D(LocatedVector):
         points = aVec.pointList
         npoint = Point2D([0, 0])  # point at origin
         if isMin is True:
-            retval = float('inf')
+            dist = float('inf')
         else:
-            retval = float('-inf')
+            dist = float('-inf')
 
         for p in points:
             # assert p.ndim == point.ndim
@@ -113,12 +113,12 @@ class LocatedVector2D(LocatedVector):
             checkval = bool
 
             if isMin is True:
-                checkval = vecnorm < retval
+                checkval = vecnorm < dist
             else:
-                checkval = vecnorm > retval
+                checkval = vecnorm > dist
 
             if checkval:
-                retval = vecnorm
+                dist = vecnorm
                 npoint = p
         return npoint, retval
 
@@ -242,8 +242,29 @@ class LocatedVector2D(LocatedVector):
         return vecnorm
 
     @staticmethod
-    def _getVec2VecDistancePointVec(vec1, vec2, isMin):
-        "Get least/farthest distance"
+    def __getVec2VecDistancePointVec(vec1, vec2,
+                                    isMin: bool,
+                                    isMinFuncs: bool):
+        """
+        Get least/farthest distance vec point
+
+        Given two vectors find the closest or farthest
+        distance in between.
+        
+        There are several outputs that are possible:
+
+        Find the closest distance between vectors using
+        the closest point in vec1 to the vec2.
+
+        Find the closest distance using farthest point
+        in vec1 to the vec2
+
+        Find the farthest distance using closest point
+        in vec1 to the vec2
+
+        Find the farthest distance using farthest point 
+        in vec1 to the vec2
+        """
         spoints = vec1.pointList  # starting points
         nspoint = Point2D([0, 0])
         nepoint = Point2D([0, 1])
@@ -256,8 +277,8 @@ class LocatedVector2D(LocatedVector):
 
         for sp in spoints:
             #
-            distancePoint = vec2.getPoint2VecDistancePoint(
-                point=sp, isMin=isMin)
+            distancePoint = vec2._getPoint2VecDistancePoint(
+                point=sp, isMin=isMinFuncs)
             epoint = distancePoint[0]
             dist = distancePoint[1]
 
@@ -276,65 +297,128 @@ class LocatedVector2D(LocatedVector):
         return nspoint, nepoint, svec, distance
 
     @classmethod
-    def getVec2VecDistancePointVec(cls, vec1, vec2, isMin):
-        "Wrapper for staticmethod"
-        return cls._getVec2VecDistancePointVec(vec1, vec2, isMin)
+    def _getVec2VecDistancePointVec(cls, 
+                                   vec1, 
+                                   vec2, 
+                                   isMin: bool,
+                                   isMinFuncs: bool):
+        """
+        Wrapper for staticmethod in order to override it
+        easily in the subclass
+        """
+        return cls.__getVec2VecDistancePointVec(vec1, vec2, isMin, isMinFuncs)
 
     @classmethod
-    def getVec2VecMinDistance(cls, vec1, vec2):
-        "Get min distance between two located vectors"
-        distancePointsVec = cls.getVec2VecDistancePointVec(
-            vec1, vec2, isMin=True)
-        return distancePointsVec[3]
+    def _getVec2VecDistancePointVecWithMinDistance(
+            cls, 
+            vec1,
+            vec2,
+            isMin: bool):
+        """
+        Vec to vec distance
+
+        Find the closest/farthest distance between 
+        vectors using
+        the closest point in vec1 to the vec2.
+        
+        Return
+        -------
+        vec, startpoint, endpoint, distance
+        """
+        return cls._getVec2VecDistancePointVec(
+            vec1,
+            vec2,
+            isMin,
+            isMinFuncs=True)
 
     @classmethod
-    def getVec2VecMaxDistance(cls, vec1, vec2):
-        "Get max distance between two located vectors"
-        distancePointsVec = cls.getVec2VecDistancePointVec(
-            vec1, vec2, isMin=False)
-        return distancePointsVec[3]
+    def _getVec2VecDistancePointVecWithMaxDistance(
+            cls, vec1, vec2, isMin: bool):
+        """
+        Vec to vec distance
+
+        Find the closest/farthest distance between 
+        vectors using
+        the farthest point in vec1 to the vec2.
+        
+        Return
+        -------
+        vec, startpoint, endpoint, distance
+        """
+        return cls._getVec2VecDistancePointVec(
+            vec1,
+            vec2,
+            isMin,
+            isMinFuncs=False)
 
     @classmethod
-    def getVec2VecMinVec(cls, vec1, vec2):
-        "Get min distance between two located vectors"
-        distancePointsVec = cls.getVec2VecDistancePointVec(
-            vec1, vec2, isMin=True)
-        return distancePointsVec[2]
+    def _getVec2VecMinDistPointVecMinD(cls, vec1, vec2):
+        """
+        Vec to vec min distance
+
+        Find the closest distance between 
+        vectors using
+        the closest point in vec1 to the vec2.
+        
+        Return
+        -------
+        vec, startpoint, endpoint, distance
+
+        """
+        return cls._getVec2VecDistancePointVecWithMinDistance(vec1, vec2, isMin=True)
 
     @classmethod
-    def getVec2VecMaxVec(cls, vec1, vec2):
-        "Get max distance between two located vectors"
-        distancePointsVec = cls.getVec2VecDistancePointVec(
-            vec1, vec2, isMin=False)
-        return distancePointsVec[2]
+    def _getVec2VecMaxDistPointVecMinD(cls, vec1, vec2):
+        """
+        Vec to vec max distance
+
+        Find the closest distance between 
+        vectors using
+        the closest point in vec1 to the vec2.
+        
+        Return
+        -------
+        vec, startpoint, endpoint, distance
+
+        """
+        return cls._getVec2VecDistancePointVecWithMinDistance( vec1, vec2, isMin=False)
 
     @classmethod
-    def getVec2VecMinSpoint(cls, vec1, vec2):
-        "Get min distance between two located vectors"
-        distancePointsVec = cls.getVec2VecDistancePointVec(
-            vec1, vec2, isMin=True)
-        return distancePointsVec[0]
+    def _getVec2VecMinDistPointVecMaxD(cls, vec1, vec2):
+        """
+        Vec to vec min distance
+
+        Find the closest distance between 
+        vectors using
+        the closest point in vec1 to the vec2.
+        
+        Return
+        -------
+        vec, startpoint, endpoint, distance
+
+        """
+        return cls._getVec2VecDistancePointVecWithMaxDistance(vec1, vec2, 
+                                                              isMin=True)
 
     @classmethod
-    def getVec2VecMaxSpoint(cls, vec1, vec2):
-        "Get max distance between two located vectors"
-        distancePointsVec = cls.getVec2VecDistancePointVec(
-            vec1, vec2, isMin=False)
-        return distancePointsVec[0]
+    def _getVec2VecMaxDistPointVecMaxD(cls, 
+                                       vec1, 
+                                       vec2) -> [Point2D, Point2D,
+                                                 LocatedVector2D, float]:
+        """
+        Vec to vec min distance
 
-    @classmethod
-    def getVec2VecMinEpoint(cls, vec1, vec2):
-        "Get min distance between two located vectors"
-        distancePointsVec = cls.getVec2VecDistancePointVec(
-            vec1, vec2, isMin=True)
-        return distancePointsVec[1]
+        Find the closest distance between 
+        vectors using
+        the closest point in vec1 to the vec2.
+        
+        Return
+        -------
+        vec, startpoint, endpoint, distance
 
-    @classmethod
-    def getVec2VecMaxEpoint(cls, vec1, vec2):
-        "Get max distance between two located vectors"
-        distancePointsVec = cls.getVec2VecDistancePointVec(
-            vec1, vec2, isMin=False)
-        return distancePointsVec[1]
+        """
+        return cls._getVec2VecDistancePointVecWithMaxDistance(vec1, vec2,
+                                                              isMin=False)
 
     def setLine(self):
         "Set line from starting point to end point"
@@ -347,65 +431,6 @@ class LocatedVector2D(LocatedVector):
         self.setLine()
 
         return None
-
-    def getMinDistance2Point(self, point) -> float:
-        "Get min distance of the given point to line"
-        assert point.ndim == self.ndim
-        return self._getMinDistance2Point(vec=self, point=point)
-
-    def getNearestPoint2Point(self, point) -> Point2D:
-        "Get nearest point on the vector to the given point"
-        assert point.ndim == self.ndim
-        return self._getNearestPointOnVec(vec=self, point=point)
-
-    def getMaxDistancePoint(self, point):
-        "Get max distance of the given point to line"
-        assert point.ndim == self.ndim
-        return self._getMaxDistance2Point(vec=self, point=point)
-
-    def getFarthestPoint2Point(self, point) -> Point2D:
-        "Get farthest point on the vector to the given point"
-        assert point.ndim == self.ndim
-        return self._getFarthestPointOnVec(vec=self, point=point)
-
-    def getMinMaxDistance2Vec(self, isMin, vec):
-        "Get minimum or maximum distance to given vector from self"
-        assert self.ndim == vec.ndim
-        distance = None
-        if isMin is True:
-            distance = self.getVec2VecMinDistance(vec1=self, vec2=vec)
-        else:
-            distance = self.getVec2VecMaxDistance(vec1=self, vec2=vec)
-        return distance
-
-    def getMinMaxVec2Vec(self, isMin, vec):
-        "Get minimum or maximum distance vector to given vector from self"
-        assert self.ndim == vec.ndim
-        if isMin is True:
-            nvec = self.getVec2VecMinVec(vec1=self, vec2=vec)
-        else:
-            nvec = self.getVec2VecMaxVec(vec1=self, vec2=vec)
-        return nvec
-
-    def getMinDistance2Vec(self, vec):
-        "Get min distance to given vec"
-        assert self.ndim == vec.ndim
-        return self.getVec2VecMinDistance(vec1=self, vec2=vec)
-
-    def getMaxDistance2Vec(self, vec):
-        "Get max distance to given vec"
-        assert self.ndim == vec.ndim
-        return self.getVec2VecMaxDistance(vec1=self, vec2=vec)
-
-    def getMinDistanceVec2Vec(self, vec) -> LocatedVector:
-        "Get vec that has the length min distance to given vec"
-        assert self.ndim == vec.ndim
-        return self.getMinMaxVec2Vec(isMin=True, vec=vec)
-
-    def getMaxDistanceVec2Vec(self, vec) -> LocatedVector:
-        "Get vec that has the length max distance to given vec"
-        assert self.ndim == vec.ndim
-        return self.getMinMaxVec2Vec(isMin=False, vec=vec)
 
 
 class ImageLocatedVector2D(LocatedVector2D):
@@ -489,8 +514,11 @@ class ImageLocatedVector2D(LocatedVector2D):
             cls,
             vec1,
             vec2,
-            isMinDistance,  # boolean or none
-            isMinCharge):
+            isMinDistance: bool,  # boolean or none
+            isMinFuncs: bool,
+            isMinCharge: bool) -> [Point2D, Point2D, 
+                                   LocatedVector2D, 
+                                   float, float]:
         "Reinterpretates the base class static method to include charge"
         #
         spoints = vec1.pointList  # starting points
@@ -502,11 +530,13 @@ class ImageLocatedVector2D(LocatedVector2D):
 
         for sp in spoints:
             #
-            distancePoint = vec2.getPoint2VecDistancePoint(
-                point=sp, isMin=isMinDistance)
+            distancePoint = vec2._getPoint2VecDistancePoint(
+                point=sp, isMin=isMinFuncs)
             epoint = distancePoint[0]
             dist = distancePoint[1]
-            tempvec = ImageLocatedVector2D(sp, epoint)
+            tempvec = ImageLocatedVector2D(image=vec2.image,
+                                           initial_point=sp,
+                                           final_point=epoint)
             tempvec.setVecProperties()
             tempcharge = tempvec.charge
 
@@ -527,164 +557,34 @@ class ImageLocatedVector2D(LocatedVector2D):
         return nspoint, nepoint, svec, distance, charge
 
     @classmethod
-    def getVec2VecDistancePointVec(cls, vec1, vec2, isMin: bool):
+    def _getVec2VecDistancePointVec(cls, vec1, vec2, 
+                                    isMin: bool,
+                                    isMinFuncs) -> [Point2D, Point2D,
+                                                    LocatedVector2D, float]:
         "Overrides the base class method"
         return cls._getVec2VecDistancePointChargeVec(
-            vec1, vec2, isMinDistance=isMin, isMinCharge=None)[:4]
+            vec1, vec2, isMinDistance=isMin, isMinFuncs=isMinFucns,
+            isMinCharge=None)[:4]
 
     @classmethod
-    def getVec2VecMinCharge(cls, vec1, vec2):
+    def getVec2VecMinDistancePointMinChargeVec(cls, vec1, vec2):
         "Get min charge between two located vectors"
         distancePointsVec = cls._getVec2VecDistancePointChargeVec(
-            vec1, vec2, isMinDistance=None, isMinCharge=True)
-        return distancePointsVec[4]
+            vec1, vec2, 
+            isMinDistance=None, 
+            isMinFuncs=True,
+            isMinCharge=True)
+        return distancePointsVec
 
     @classmethod
-    def getVec2VecMaxCharge(cls, vec1, vec2):
-        "Get min distance between two located vectors"
+    def getVec2VecMaxDistancePointMinChargeVec(cls, vec1, vec2):
+        "Get min charge between two located vectors"
         distancePointsVec = cls._getVec2VecDistancePointChargeVec(
-            vec1, vec2, isMinDistance=None, isMinCharge=False)
-        return distancePointsVec[4]
-
-    @classmethod
-    def getVec2VecMinDistanceMaxChargeDist(cls, vec1, vec2):
-        "Get min distance between two located vectors"
-        distancePointsVec = cls._getVec2VecDistancePointChargeVec(
-            vec1, vec2, isMinDistance=True, isMinCharge=False)
-        return distancePointsVec[3]
-
-    @classmethod
-    def getVec2VecMinDistanceMinChargeDist(cls, vec1, vec2):
-        "Get min distance between two located vectors"
-        distancePointsVec = cls._getVec2VecDistancePointChargeVec(
-            vec1, vec2, isMinDistance=True, isMinCharge=True)
-        return distancePointsVec[3]
-
-    @classmethod
-    def getVec2VecMaxDistanceMaxChargeDist(cls, vec1, vec2):
-        "Get max distance between two located vectors"
-        distancePointsVec = cls._getVec2VecDistancePointChargeVec(
-            vec1, vec2, isMinDistance=False, isMinCharge=False)
-        return distancePointsVec[3]
-
-    @classmethod
-    def getVec2VecMaxDistanceMinChargeDist(cls, vec1, vec2):
-        "Get max distance between two located vectors"
-        distancePointsVec = cls._getVec2VecDistancePointChargeVec(
-            vec1, vec2, isMinDistance=False, isMinCharge=True)
-        return distancePointsVec[3]
-
-    @classmethod
-    def getVec2VecMinDistanceMaxChargeCharge(cls, vec1, vec2):
-        "Get min distance between two located vectors"
-        distancePointsVec = cls._getVec2VecDistancePointChargeVec(
-            vec1, vec2, isMinDistance=True, isMinCharge=False)
-        return distancePointsVec[4]
-
-    @classmethod
-    def getVec2VecMinDistanceMinChargeCharge(cls, vec1, vec2):
-        "Get min distance between two located vectors"
-        distancePointsVec = cls._getVec2VecDistancePointChargeVec(
-            vec1, vec2, isMinDistance=True, isMinCharge=True)
-        return distancePointsVec[4]
-
-    @classmethod
-    def getVec2VecMaxDistanceMaxChargeCharge(cls, vec1, vec2):
-        "Get max distance between two located vectors"
-        distancePointsVec = cls._getVec2VecDistancePointChargeVec(
-            vec1, vec2, isMinDistance=False, isMinCharge=False)
-        return distancePointsVec[4]
-
-    @classmethod
-    def getVec2VecMaxDistanceMinChargeCharge(cls, vec1, vec2):
-        "Get max distance between two located vectors"
-        distancePointsVec = cls._getVec2VecDistancePointChargeVec(
-            vec1, vec2, isMinDistance=False, isMinCharge=True)
-        return distancePointsVec[4]
-
-    @classmethod
-    def getVec2VecMinDistanceMaxChargeSPoint(cls, vec1, vec2):
-        "Get min distance between two located vectors"
-        distancePointsVec = cls._getVec2VecDistancePointChargeVec(
-            vec1, vec2, isMinDistance=True, isMinCharge=False)
-        return distancePointsVec[0]
-
-    @classmethod
-    def getVec2VecMinDistanceMinChargeSPoint(cls, vec1, vec2):
-        "Get min distance between two located vectors"
-        distancePointsVec = cls._getVec2VecDistancePointChargeVec(
-            vec1, vec2, isMinDistance=True, isMinCharge=True)
-        return distancePointsVec[0]
-
-    @classmethod
-    def getVec2VecMaxDistanceMaxChargeSPoint(cls, vec1, vec2):
-        "Get max distance between two located vectors"
-        distancePointsVec = cls._getVec2VecDistancePointChargeVec(
-            vec1, vec2, isMinDistance=False, isMinCharge=False)
-        return distancePointsVec[0]
-
-    @classmethod
-    def getVec2VecMaxDistanceMinChargeSPoint(cls, vec1, vec2):
-        "Get max distance between two located vectors"
-        distancePointsVec = cls._getVec2VecDistancePointChargeVec(
-            vec1, vec2, isMinDistance=False, isMinCharge=True)
-        return distancePointsVec[0]
-
-    @classmethod
-    def getVec2VecMinDistanceMaxChargeEPoint(cls, vec1, vec2):
-        "Get min distance between two located vectors"
-        distancePointsVec = cls._getVec2VecDistancePointChargeVec(
-            vec1, vec2, isMinDistance=True, isMinCharge=False)
-        return distancePointsVec[1]
-
-    @classmethod
-    def getVec2VecMinDistanceMinChargeEPoint(cls, vec1, vec2):
-        "Get min distance between two located vectors"
-        distancePointsVec = cls._getVec2VecDistancePointChargeVec(
-            vec1, vec2, isMinDistance=True, isMinCharge=True)
-        return distancePointsVec[1]
-
-    @classmethod
-    def getVec2VecMaxDistanceMaxChargeEPoint(cls, vec1, vec2):
-        "Get max distance between two located vectors"
-        distancePointsVec = cls._getVec2VecDistancePointChargeVec(
-            vec1, vec2, isMinDistance=False, isMinCharge=False)
-        return distancePointsVec[1]
-
-    @classmethod
-    def getVec2VecMaxDistanceMinChargeEPoint(cls, vec1, vec2):
-        "Get max distance between two located vectors"
-        distancePointsVec = cls._getVec2VecDistancePointChargeVec(
-            vec1, vec2, isMinDistance=False, isMinCharge=True)
-        return distancePointsVec[1]
-
-    @classmethod
-    def getVec2VecMinDistanceMaxChargeVec(cls, vec1, vec2):
-        "Get min distance between two located vectors"
-        distancePointsVec = cls._getVec2VecDistancePointChargeVec(
-            vec1, vec2, isMinDistance=True, isMinCharge=False)
-        return distancePointsVec[2]
-
-    @classmethod
-    def getVec2VecMinDistanceMinChargeVec(cls, vec1, vec2):
-        "Get min distance between two located vectors"
-        distancePointsVec = cls._getVec2VecDistancePointChargeVec(
-            vec1, vec2, isMinDistance=True, isMinCharge=True)
-        return distancePointsVec[2]
-
-    @classmethod
-    def getVec2VecMaxDistanceMaxChargeVec(cls, vec1, vec2):
-        "Get max distance between two located vectors"
-        distancePointsVec = cls._getVec2VecDistancePointChargeVec(
-            vec1, vec2, isMinDistance=False, isMinCharge=False)
-        return distancePointsVec[2]
-
-    @classmethod
-    def getVec2VecMaxDistanceMinChargeVec(cls, vec1, vec2):
-        "Get max distance between two located vectors"
-        distancePointsVec = cls._getVec2VecDistancePointChargeVec(
-            vec1, vec2, isMinDistance=False, isMinCharge=True)
-        return distancePointsVec[2]
+            vec1, vec2, 
+            isMinDistance=None, 
+            isMinFuncs=False,
+            isMinCharge=True)
+        return distancePointsVec
 
     def getMinCharge2Vec(self, vec):
         "Get minimum charge to vector"
