@@ -10,6 +10,7 @@ from sympy import sympify
 from symage.main.point import Point2D, GrayImagePoint
 from symage.main.vector import LocatedVector2D, GrayImageLocatedVector2D
 import pdb
+import os
 
 
 class VectorTest(unittest.TestCase):
@@ -22,8 +23,6 @@ class VectorTest(unittest.TestCase):
                                   (self.imwidth, self.imheight)
                                   )
         self.blackimarr = np.array(self.blackimg)
-        self.grayscale_img = ImageOps.grayscale(self.blackimg)
-        self.grayimarr = np.array(self.grayscale_img)
         self.whiteimg = Image.new("RGB",
                                   (self.imwidth, self.imheight),
                                   "white")
@@ -32,6 +31,17 @@ class VectorTest(unittest.TestCase):
         self.point2 = Point2D(x=400, y=250)
         self.point3 = Point2D(x=200, y=100)
         self.point4 = Point2D(x=250, y=50)
+        projdir = os.getcwd()
+        testdir = os.path.join(projdir, 'tests')
+        assetdir = os.path.join(testdir, 'assets')
+        imagesdir = os.path.join(assetdir, 'images')
+        self.impath = os.path.join(imagesdir,
+                                   'Demotic_Ostraca_Medinet_Habu_73.png')
+        self.grayscale_img = ImageOps.grayscale(
+            Image.open(self.impath).copy()
+        )
+        self.grayimarr = np.array(self.grayscale_img)
+        #
         self.img_point1 = GrayImagePoint(x=300, y=150, z=0)
         self.img_point1.setZvalFromImage(self.grayimarr)
         self.img_point2 = GrayImagePoint(x=400, y=250, z=0)
@@ -380,7 +390,7 @@ class VectorTest(unittest.TestCase):
         self.assertEqual(dist8, compdist8)
         self.assertEqual(charge8, compcharge8)
     
-    def test_GrayImageLocatedVector2D_getConditionDistanceCharge_1(self):
+    def test_GrayImageLocatedVector2D_getConditionDistanceCharge(self):
         imvec = GrayImageLocatedVector2D(image=self.blackimarr,
                                          initial_point=self.img_point1,
                                          final_point=self.img_point2)
@@ -503,10 +513,218 @@ class VectorTest(unittest.TestCase):
         self.assertTrue(checkval7)
         self.assertTrue(checkval8)
 
+    def test_GrayImageLocatedVector2D__getVec2VecDistancePointChargeVec_1(
+            self):
+        imvec1 = GrayImageLocatedVector2D(image=self.grayimarr,
+                                          initial_point=self.img_point1,
+                                          final_point=self.img_point2)
+        imvec1.setVecProperties()
+        imvec2 = GrayImageLocatedVector2D(image=self.grayimarr,
+                                          initial_point=self.img_point3,
+                                          final_point=self.img_point4)
+        imvec2.setVecProperties()
+        (nspoint1, nepoint1, svec1, distance1,
+         charge1) = GrayImageLocatedVector2D._getVec2VecDistancePointChargeVec(
+             vec1=imvec1,
+             vec2=imvec2,
+             isMinDistance=True,
+             isMinFuncs=True,
+             isMinCharge=None)
 
+        (nspoint2, nepoint2, svec2, distance2,
+         charge2) = GrayImageLocatedVector2D._getVec2VecDistancePointChargeVec(
+             vec1=imvec1,
+             vec2=imvec2,
+             isMinDistance=False,
+             isMinFuncs=True,
+             isMinCharge=None)
 
+        (nspoint3, nepoint3, svec3, distance3,
+         charge3) = GrayImageLocatedVector2D._getVec2VecDistancePointChargeVec(
+             vec1=imvec1,
+             vec2=imvec2,
+             isMinDistance=None,
+             isMinFuncs=True,
+             isMinCharge=True)
 
+        (nspoint4, nepoint4, svec4, distance4,
+         charge4) = GrayImageLocatedVector2D._getVec2VecDistancePointChargeVec(
+             vec1=imvec1,
+             vec2=imvec2,
+             isMinDistance=None,
+             isMinFuncs=True,
+             isMinCharge=False)
 
+        (nspoint5, nepoint5, svec5, distance5,
+         charge5) = GrayImageLocatedVector2D._getVec2VecDistancePointChargeVec(
+             vec1=imvec1,
+             vec2=imvec2,
+             isMinDistance=True,
+             isMinFuncs=True,
+             isMinCharge=True)
+
+        (nspoint6, nepoint6, svec6, distance6,
+         charge6) = GrayImageLocatedVector2D._getVec2VecDistancePointChargeVec(
+             vec1=imvec1,
+             vec2=imvec2,
+             isMinDistance=False,
+             isMinFuncs=True,
+             isMinCharge=True)
+
+        (nspoint7, nepoint7, svec7, distance7,
+         charge7) = GrayImageLocatedVector2D._getVec2VecDistancePointChargeVec(
+             vec1=imvec1,
+             vec2=imvec2,
+             isMinDistance=True,
+             isMinFuncs=True,
+             isMinCharge=False)
+
+        (nspoint8, nepoint8, svec8, distance8,
+         charge8) = GrayImageLocatedVector2D._getVec2VecDistancePointChargeVec(
+             vec1=imvec1,
+             vec2=imvec2,
+             isMinDistance=False,
+             isMinFuncs=True,
+             isMinCharge=False)
+
+        foo1 = self.drawLine2ImageFromVec(self.blackimg, imvec1)
+        foo2 = self.drawLine2ImageFromVec(self.blackimg, imvec2)
+        foo3 = self.drawLine2ImageFromVec(self.blackimg, svec1)
+        foo4 = self.drawLine2ImageFromVec(self.blackimg, svec2)
+        foo5 = self.drawLine2ImageFromVec(self.blackimg, svec3)
+        foo6 = self.drawLine2ImageFromVec(self.blackimg, svec4)
+        foo7 = self.drawLine2ImageFromVec(self.blackimg, svec5)
+        foo8 = self.drawLine2ImageFromVec(self.blackimg, svec6)
+        foo9 = self.drawLine2ImageFromVec(self.blackimg, svec7)
+        foo10 = self.drawLine2ImageFromVec(self.blackimg, svec8)
+        foo11 = self.drawVectors2Image(self.blackimg, [imvec1, imvec2, svec1])
+        foo12 = self.drawVectors2Image(self.blackimg, [imvec1, imvec2, svec2])
+        foo13 = self.drawVectors2Image(self.blackimg, [imvec1, imvec2, svec3])
+        foo14 = self.drawVectors2Image(self.blackimg, [imvec1, imvec2, svec4])
+        foo15 = self.drawVectors2Image(self.blackimg, [imvec1, imvec2, svec5])
+        foo16 = self.drawVectors2Image(self.blackimg, [imvec1, imvec2, svec6])
+        foo17 = self.drawVectors2Image(self.blackimg, [imvec1, imvec2, svec7])
+        foo18 = self.drawVectors2Image(self.blackimg, [imvec1, imvec2, svec8])
+
+        pdb.set_trace()
+        compointe = GrayImagePoint(x=225, y=75, z=0)
+        compoints = GrayImagePoint(x=300, y=150, z=0)
+        compvec = GrayImageLocatedVector2D(
+            image=self.grayimarr,
+            initial_point=compoints, 
+            final_point=compointe)
+        compdist_expr = "75*sqrt(2)"
+        compdist = sympify(compdist_expr)
+        self.assertEqual(nspoint, compoints, "Starting point is not true")
+        self.assertEqual(nepoint, compointe, "Ending point is not true")
+        self.assertEqual(svec, compvec, "Computed vector is not true")
+        self.assertEqual(dist, compdist, "Computed distance is not true")
+
+    def test_GrayImageLocatedVector2D__getVec2VecDistancePointChargeVec_2(
+            self):
+        imvec1 = GrayImageLocatedVector2D(image=self.grayimarr,
+                                          initial_point=self.img_point1,
+                                          final_point=self.img_point2)
+        imvec1.setVecProperties()
+        imvec2 = GrayImageLocatedVector2D(image=self.grayimarr,
+                                          initial_point=self.img_point3,
+                                          final_point=self.img_point4)
+        imvec2.setVecProperties()
+        (nspoint1, nepoint1, svec1, distance1,
+         charge1) = GrayImageLocatedVector2D._getVec2VecDistancePointChargeVec(
+             vec1=imvec1,
+             vec2=imvec2,
+             isMinDistance=True,
+             isMinFuncs=False,
+             isMinCharge=None)
+
+        (nspoint2, nepoint2, svec2, distance2,
+         charge2) = GrayImageLocatedVector2D._getVec2VecDistancePointChargeVec(
+             vec1=imvec1,
+             vec2=imvec2,
+             isMinDistance=False,
+             isMinFuncs=False,
+             isMinCharge=None)
+
+        (nspoint3, nepoint3, svec3, distance3,
+         charge3) = GrayImageLocatedVector2D._getVec2VecDistancePointChargeVec(
+             vec1=imvec1,
+             vec2=imvec2,
+             isMinDistance=None,
+             isMinFuncs=False,
+             isMinCharge=True)
+
+        (nspoint4, nepoint4, svec4, distance4,
+         charge4) = GrayImageLocatedVector2D._getVec2VecDistancePointChargeVec(
+             vec1=imvec1,
+             vec2=imvec2,
+             isMinDistance=None,
+             isMinFuncs=False,
+             isMinCharge=False)
+
+        (nspoint5, nepoint5, svec5, distance5,
+         charge5) = GrayImageLocatedVector2D._getVec2VecDistancePointChargeVec(
+             vec1=imvec1,
+             vec2=imvec2,
+             isMinDistance=True,
+             isMinFuncs=False,
+             isMinCharge=True)
+
+        (nspoint6, nepoint6, svec6, distance6,
+         charge6) = GrayImageLocatedVector2D._getVec2VecDistancePointChargeVec(
+             vec1=imvec1,
+             vec2=imvec2,
+             isMinDistance=False,
+             isMinFuncs=False,
+             isMinCharge=True)
+
+        (nspoint7, nepoint7, svec7, distance7,
+         charge7) = GrayImageLocatedVector2D._getVec2VecDistancePointChargeVec(
+             vec1=imvec1,
+             vec2=imvec2,
+             isMinDistance=True,
+             isMinFuncs=False,
+             isMinCharge=False)
+
+        (nspoint8, nepoint8, svec8, distance8,
+         charge8) = GrayImageLocatedVector2D._getVec2VecDistancePointChargeVec(
+             vec1=imvec1,
+             vec2=imvec2,
+             isMinDistance=False,
+             isMinFuncs=False,
+             isMinCharge=False)
+        foo1 = self.drawLine2ImageFromVec(self.blackimg, imvec1)
+        foo2 = self.drawLine2ImageFromVec(self.blackimg, imvec2)
+        foo3 = self.drawLine2ImageFromVec(self.blackimg, svec1)
+        foo4 = self.drawLine2ImageFromVec(self.blackimg, svec2)
+        foo5 = self.drawLine2ImageFromVec(self.blackimg, svec3)
+        foo6 = self.drawLine2ImageFromVec(self.blackimg, svec4)
+        foo7 = self.drawLine2ImageFromVec(self.blackimg, svec5)
+        foo8 = self.drawLine2ImageFromVec(self.blackimg, svec6)
+        foo9 = self.drawLine2ImageFromVec(self.blackimg, svec7)
+        foo10 = self.drawLine2ImageFromVec(self.blackimg, svec8)
+        foo11 = self.drawVectors2Image(self.blackimg, [imvec1, imvec2, svec1])
+        foo12 = self.drawVectors2Image(self.blackimg, [imvec1, imvec2, svec2])
+        foo13 = self.drawVectors2Image(self.blackimg, [imvec1, imvec2, svec3])
+        foo14 = self.drawVectors2Image(self.blackimg, [imvec1, imvec2, svec4])
+        foo15 = self.drawVectors2Image(self.blackimg, [imvec1, imvec2, svec5])
+        foo16 = self.drawVectors2Image(self.blackimg, [imvec1, imvec2, svec6])
+        foo17 = self.drawVectors2Image(self.blackimg, [imvec1, imvec2, svec7])
+        foo18 = self.drawVectors2Image(self.blackimg, [imvec1, imvec2, svec8])
+
+        pdb.set_trace()
+        compointe = GrayImagePoint(x=225, y=75, z=0)
+        compoints = GrayImagePoint(x=300, y=150, z=0)
+        compvec = GrayImageLocatedVector2D(
+            image=self.grayimarr,
+            initial_point=compoints, 
+            final_point=compointe)
+        compdist_expr = "75*sqrt(2)"
+        compdist = sympify(compdist_expr)
+        self.assertEqual(nspoint, compoints, "Starting point is not true")
+        self.assertEqual(nepoint, compointe, "Ending point is not true")
+        self.assertEqual(svec, compvec, "Computed vector is not true")
+        self.assertEqual(dist, compdist, "Computed distance is not true")
 
 
 
