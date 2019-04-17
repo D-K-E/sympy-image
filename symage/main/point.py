@@ -5,6 +5,7 @@
 # Packages
 
 import numpy as np
+from PIL import Image
 from sympy.geometry.point import Point as SymPoint
 from sympy.geometry.point import Point2D as SymPoint2D
 from sympy.geometry.point import Point3D as SymPoint3D
@@ -19,11 +20,23 @@ class PointND:
         self.ndim = len(coords)
 
     def __str__(self):
-        return "Point at {}".format(str(enumerate(self.coords)))
+        return "Point at {}".format(
+            str(
+                list(
+                    enumerate(self.coords)
+                )
+            )
+        )
 
     def __repr__(self):
-        return "{0}-d point at {1}.".format(self.ndim,
-                                            str(enumerate(self.coords)))
+        return "{0}-d point at {1}.".format(
+            self.ndim,
+            str(
+                list(
+                    enumerate(self.coords)
+                )
+            )
+        )
 
     def __hash__(self):
         "Hash object"
@@ -57,14 +70,15 @@ class Point2D(PointND):
                  coordlist=None,
                  degree=0):
         if coordlist is not None:
-            assert len(coordlist) == 2
+            assert len(coordlist) >= 2
             argx = coordlist[0]
             argy = coordlist[1]
+            super().__init__(coords=coordlist)
         else:
             argx = x
             argy = y
+            super().__init__(coords=(argx, argy))
         #
-        super().__init__(coords=(argx, argy))
         self.point = SymPoint2D(argx, argy)
         self.angle_degree = degree
         self.radian = self.angle_degree * np.pi / 180
@@ -98,17 +112,26 @@ class GrayImagePoint(Point2D):
     """
 
     def __init__(self,
-                 x: int, y: int, z: int
+                 x=None, y=None, z=None,
+                 coordlist=None
                  ):
         assert isinstance(x, int) or x is None
         assert isinstance(y, int) or y is None
         assert isinstance(z, int) or z is None
-        if x is not None:
-            assert x >= 0
-        if y is not None:
-            assert y >= 0
-        if z is not None:
-            assert z <= 255 and z >= 0
+        if coordlist is None:
+            if x is not None:
+                assert x >= 0
+            if y is not None:
+                assert y >= 0
+            if z is not None:
+                assert z <= 255 and z >= 0
+            super().__init__(coordlist=[x, y, z])
+        else:
+            assert len(coordlist) >= 3
+            super().__init__(coordlist=coordlist)
+            x = coordlist[0]
+            y = coordlist[1]
+            z = coordlist[2]
         self.x = x
         self.y = y
         self.z = z
@@ -142,5 +165,8 @@ class GrayImagePoint(Point2D):
 
     def setZvalFromImage(self, image: np.ndarray):
         "Given an image set z value of the point from it"
+        imshape = image.shape
+        if len(imshape) > 2 and imshape[2] > 2:
+            raise ValueError("Image not grayscale")
         zval = self.getPointValFromImage(image)
         self.z = zval

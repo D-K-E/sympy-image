@@ -449,8 +449,8 @@ class GrayImageLocatedVector2D(LocatedVector2D):
             self,
             image: np.ndarray,
             vec=None,
-            initial_point=None,  # :Point2D:
-            final_point=None,  # :Point2D:
+            initial_point=None,  # :GrayImagePoint:
+            final_point=None,  # :GrayImagePoint:
             segment=None) -> None:
         ""
         if vec is None:
@@ -466,7 +466,7 @@ class GrayImageLocatedVector2D(LocatedVector2D):
     def getConditionDistanceCharge(minDist,
                                    minCharge,
                                    distanceParentScope,
-                                   distanceLocalScope, 
+                                   distanceLocalScope,
                                    chargeParentScope,
                                    chargeLocalScope):
         """
@@ -554,9 +554,8 @@ class GrayImageLocatedVector2D(LocatedVector2D):
             vec2,
             isMinDistance: bool,  # boolean or none
             isMinFuncs: bool,
-            isMinCharge: bool) -> [Point2D, Point2D,
-                                   LocatedVector2D,
-                                   float, float]:
+            isMinCharge: bool  # boolean or none
+    ) -> [Point2D, Point2D, LocatedVector2D, float, float]:
         "Overrides the base class static method to include charge"
         #
         spoints = vec1.pointList  # starting points
@@ -564,12 +563,13 @@ class GrayImageLocatedVector2D(LocatedVector2D):
         nepoint = None
         svec = None
         distance, charge = cls.getDistanceChargeVariables(
-            minDist=isMinDistance, minCharge=isMinCharge)
+            minDist=isMinDistance, minCharge=isMinCharge
+        )
 
         for sp in spoints:
             #
-            distancePoint = vec2._getPoint2VecDistancePoint(
-                point=sp, isMin=isMinFuncs)
+            distancePoint = vec2._getPoint2VecDistancePoint(point=sp,
+                                                            isMin=isMinFuncs)
             epoint = distancePoint[0]
             dist = distancePoint[1]
             tempvec = GrayImageLocatedVector2D(image=vec2.image,
@@ -736,9 +736,9 @@ class GrayImageLocatedVector2D(LocatedVector2D):
 
     def setLine(self) -> None:
         "Overrides base class method"
-        plist = self._getStraightLine(point1=self.p_init, point2=self.p_final)
+        plist = self._getStraightLine(point1=self.spoint, point2=self.epoint)
         plist = [
-            GrayImagePoint(spacePoint=p).setZvalFromImage(self.image)
+            GrayImagePoint(coordlist=p.coords).setZvalFromImage(self.image)
             for p in plist
         ]
         self.pointList = plist

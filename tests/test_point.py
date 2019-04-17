@@ -4,7 +4,8 @@ import numpy as np
 import sympy.geometry
 
 from symage.main import point
-from PIL import Image
+from PIL import Image, ImageOps
+import pdb
 
 # img = Image.open('Demotic_Ostraca_Medinet_Habu_73.png')
 # imarr = np.array(img)
@@ -29,7 +30,7 @@ class PointTest(unittest.TestCase):
         self.assertTrue(result, message)
 
     def loadImage(self):
-        impath = os.path.join(self.imagedir, 
+        impath = os.path.join(self.imagedir,
                               "Demotic_Ostraca_Medinet_Habu_73.png")
         return Image.open(impath)
 
@@ -105,6 +106,14 @@ class PointTest(unittest.TestCase):
         self.compareArrays(imval, compval,
                            "Pixel values are not equal")
 
+    def test_GrayImagePoint_setZvalFromImage(self):
+        img = self.loadImage()
+        img = ImageOps.grayscale(img)
+        impoint = point.GrayImagePoint(x=20, y=120, z=180)
+        zval = impoint.getPointValFromImage(np.array(img))
+        imval = impoint.setZvalFromImage(np.array(img))
+        # pdb.set_trace()
+        self.assertEqual(zval, impoint.z, "Point val and z val not equal")
 
 if __name__ == '__main__':
     unittest.main()
